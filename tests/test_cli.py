@@ -25,3 +25,11 @@ def test_cli_error(_mock_api, _mock_get_api_bases, _mock_base_schema):
         )
         assert result.exit_code == 2
         assert "Output filename must contain '{}'" in result.output
+
+
+def test_cli_filename(_mock_api, _mock_get_api_bases, _mock_base_schema):
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        result = runner.invoke(airtable_to_sqlite, ["--output", os.path.join(tmpdirname, "blah.db"), "app123"])
+        assert result.exit_code == 0
+        assert os.path.exists(os.path.join(tmpdirname, "blah.db"))
