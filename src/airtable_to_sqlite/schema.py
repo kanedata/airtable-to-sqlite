@@ -1,7 +1,9 @@
 import logging
 from copy import copy
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Generator, Optional
+
+from pyairtable.api.base import Base as AirtableBase
 
 from airtable_to_sqlite.constants import (
     NUMBER_FIELD_TYPES,
@@ -62,7 +64,7 @@ class FieldSchema:
             for choice in options.get("choices", [])
         ]
 
-    def for_insertion(self, table: "TableSchema"):
+    def for_insertion(self, table: "TableSchema") -> dict[str, Any]:
         options = copy(self.options)
         field_to_insert: dict[str, Any] = {
             "id": self.id,
@@ -105,6 +107,8 @@ class TableSchema:
             return self.id
         return self.name
 
-    def get_table_data(self, api):
+    def get_table_data(self, api: AirtableBase) -> Generator[dict[str, Any], None, None]:
         logger.info(f"Fetching table data for {self.name} from Airtable...")
-        return api.all(self.name)
+        for page in api.iterate(self.name):
+            for record in page:
+                yield record

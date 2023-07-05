@@ -48,9 +48,9 @@ class AirtableBaseToSqlite:
         db: Database,
         base: BaseRecord,
         prefer_ids: PreferedNamingMethod = PreferedNamingMethod.NAME,
-    ):
-        self._base = base
-        self._db = db
+    ) -> None:
+        self._base: BaseRecord = base
+        self._db: Database = db
         self._base_api = AirtableBase(personal_access_token, base.id)
         self.prefer_ids = prefer_ids
         self.foreign_keys: ForeignKeySet = set()
@@ -58,7 +58,7 @@ class AirtableBaseToSqlite:
         self.table_id_lookup: dict[str, str] = {}
         self.meta_tables: dict[str, sqlite_utils.db.Table] = {}
 
-    def run(self):
+    def run(self) -> None:
         self.get_schema()
         self.create_metadata_tables()
         self.create_all_table_metadata()
@@ -66,7 +66,7 @@ class AirtableBaseToSqlite:
         self.insert_settings()
         self.insert_all_table_data()
 
-    def get_schema(self):
+    def get_schema(self) -> None:
         logger.info("Fetching schema from Airtable...")
         tables = pyairtable.metadata.get_base_schema(self._base_api)
         for table in tables["tables"]:
@@ -82,7 +82,7 @@ class AirtableBaseToSqlite:
             self.table_meta.append(this_table)
             self.table_id_lookup[this_table.id] = this_table.db_name(self.prefer_ids)
 
-    def create_metadata_tables(self):
+    def create_metadata_tables(self) -> None:
         for table_name, (columns, options) in META_TABLES.items():
             for foreign_key in options.pop("foreign_keys", []):
                 self.foreign_keys.add((table_name, foreign_key))
@@ -91,7 +91,7 @@ class AirtableBaseToSqlite:
                 db_table.create(columns=columns, **options)
                 self.meta_tables[table_name] = db_table
 
-    def create_all_table_metadata(self):
+    def create_all_table_metadata(self) -> None:
         for table in tqdm(self.table_meta):
             self.create_table_metadata(table)
 
@@ -106,7 +106,7 @@ class AirtableBaseToSqlite:
     def create_table_metadata(
         self,
         table: TableSchema,
-    ):
+    ) -> None:
         table_name = table.db_name(self.prefer_ids)
 
         self.meta_tables["_meta_table"].insert(
@@ -164,14 +164,15 @@ class AirtableBaseToSqlite:
             for view in table.views
         )
 
-    def create_foreign_keys(self):
+    def create_foreign_keys(self) -> None:
         logger.info("Adding foreign keys")
         for table_name, foreign_key in self.foreign_keys:
             db_table = self._db[table_name]
             if isinstance(db_table, sqlite_utils.db.Table):
                 db_table.add_foreign_key(*foreign_key)
+        self.foreign_keys = set()
 
-    def insert_settings(self):
+    def insert_settings(self) -> None:
         self.meta_tables["_meta_settings"].insert_all(
             [
                 {
@@ -193,19 +194,19 @@ class AirtableBaseToSqlite:
             ]
         )
 
-    def insert_all_table_data(self):
+    def insert_all_table_data(self) -> None:
         logger.info("Fetching table data")
-        for table in tqdm(self.table_meta):
+        for table in self.table_meta:
             self.insert_table_date(table)
 
-    def insert_table_date(self, table: TableSchema):
+    def insert_table_date(self, table: TableSchema) -> None:
         # get table records and insert
         table_data = table.get_table_data(self._base_api)
         table_name = table.db_name(self.prefer_ids)
         db_table = self._db.table(table_name)
 
         records_to_save = []
-        for record in table_data:
+        for record in tqdm(table_data):
             record_to_save = {
                 "_id": record["id"],
                 "_createdTime": record["createdTime"],
