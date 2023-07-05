@@ -48,6 +48,7 @@ path = "src/airtable_to_sqlite/__about__.py"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
+  "pytest-mock",
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
@@ -59,6 +60,13 @@ cov-report = [
 cov = [
   "test-cov",
   "cov-report",
+]
+cov-html = [
+  "test-cov",
+  "- coverage combine",
+  "coverage report",
+  "coverage html",
+  "python -m http.server -d htmlcov",
 ]
 
 [[tool.hatch.envs.all.matrix]]

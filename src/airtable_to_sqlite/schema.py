@@ -28,7 +28,7 @@ class FieldSchema:
     type: str  # noqa: A003
     options: Optional[dict[str, Any]] = None
 
-    def db_name(self, prefers_ids: PreferedNamingMethod) -> str:
+    def db_name(self, prefers_ids: PreferedNamingMethod = PreferedNamingMethod.NAME) -> str:
         if prefers_ids == PreferedNamingMethod.ID:
             return self.id
         return self.name
@@ -88,7 +88,7 @@ class ViewSchema:
     name: str
     type: str  # noqa: A003
 
-    def db_name(self, prefers_ids: PreferedNamingMethod) -> str:
+    def db_name(self, prefers_ids: PreferedNamingMethod = PreferedNamingMethod.NAME) -> str:
         if prefers_ids == PreferedNamingMethod.ID:
             return self.id
         return self.name
@@ -102,7 +102,7 @@ class TableSchema:
     fields: list[FieldSchema]
     views: list[ViewSchema]
 
-    def db_name(self, prefers_ids: PreferedNamingMethod) -> str:
+    def db_name(self, prefers_ids: PreferedNamingMethod = PreferedNamingMethod.NAME) -> str:
         if prefers_ids == PreferedNamingMethod.ID:
             return self.id
         return self.name

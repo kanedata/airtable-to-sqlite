@@ -37,7 +37,7 @@ def get_base_records(
             raise KeyError(msg)
 
     for base_record in all_bases["bases"]:
-        if (base_record["id"] in base_ids) or (base_ids is None):
+        if (base_ids is None) or (base_record["id"] in base_ids):
             yield BaseRecord(**base_record)
 
 
@@ -84,24 +84,23 @@ class AirtableBaseToSqlite:
 
     def create_metadata_tables(self) -> None:
         for table_name, (columns, options) in META_TABLES.items():
-            for foreign_key in options.pop("foreign_keys", []):
+            options_to_use = options.copy()
+            for foreign_key in options_to_use.pop("foreign_keys", []):
                 self.foreign_keys.add((table_name, foreign_key))
             db_table = self._db.table(table_name)
             if isinstance(db_table, sqlite_utils.db.Table):
-                db_table.create(columns=columns, **options)
+                db_table.create(columns=columns, **options_to_use)
                 self.meta_tables[table_name] = db_table
+            else:  # pragma: no cover
+                pass
 
     def create_all_table_metadata(self) -> None:
         for table in tqdm(self.table_meta):
             self.create_table_metadata(table)
 
-    def get_link_table(self, field: FieldSchema, table: TableSchema) -> Optional[sqlite_utils.db.Table]:
+    def get_link_table(self, field: FieldSchema, table: TableSchema) -> sqlite_utils.db.Table:
         new_table_name = table.db_name(self.prefer_ids) + "_" + field.id
-        link_db_table = self._db.table(new_table_name)
-        if isinstance(link_db_table, sqlite_utils.db.Table):
-            return link_db_table
-        msg = f"Could not find link table {new_table_name}"
-        raise ValueError(msg)
+        return sqlite_utils.db.Table(self._db, new_table_name)
 
     def create_table_metadata(
         self,
@@ -131,12 +130,11 @@ class AirtableBaseToSqlite:
             fields_to_insert.append(field.for_insertion(table))
 
             if (field.type == "multipleRecordLinks") and field.options is not None:
-                new_table_name = table_name + "_" + field.id
+                link_db_table = self.get_link_table(field, table)
                 other_table = field.options["linkedTableId"]
                 other_table_name = self.table_id_lookup.get(other_table, other_table)
-                self.foreign_keys.add((new_table_name, ("recordId", table_name, "_id")))
-                self.foreign_keys.add((new_table_name, ("otherRecordId", other_table_name, "_id")))
-                link_db_table = self._db.table(new_table_name)
+                self.foreign_keys.add((link_db_table.name, ("recordId", table_name, "_id")))
+                self.foreign_keys.add((link_db_table.name, ("otherRecordId", other_table_name, "_id")))
                 if isinstance(link_db_table, sqlite_utils.db.Table):
                     link_db_table.create(
                         columns={
@@ -144,6 +142,8 @@ class AirtableBaseToSqlite:
                             "otherRecordId": str,
                         },
                     )
+                else:  # pragma: no cover
+                    pass
 
             column_type = field.column_type
             if column_type is not None:
@@ -153,6 +153,8 @@ class AirtableBaseToSqlite:
         db_table = self._db.table(table_name)
         if isinstance(db_table, sqlite_utils.db.Table):
             db_table.create(columns=column_types, pk="_id")
+        else:  # pragma: no cover
+            pass
 
         self.meta_tables["_meta_view"].insert_all(
             {
@@ -170,6 +172,8 @@ class AirtableBaseToSqlite:
             db_table = self._db[table_name]
             if isinstance(db_table, sqlite_utils.db.Table):
                 db_table.add_foreign_key(*foreign_key)
+            else:  # pragma: no cover
+                pass
         self.foreign_keys = set()
 
     def insert_settings(self) -> None:
@@ -197,9 +201,9 @@ class AirtableBaseToSqlite:
     def insert_all_table_data(self) -> None:
         logger.info("Fetching table data")
         for table in self.table_meta:
-            self.insert_table_date(table)
+            self.insert_table_data(table)
 
-    def insert_table_date(self, table: TableSchema) -> None:
+    def insert_table_data(self, table: TableSchema) -> None:
         # get table records and insert
         table_data = table.get_table_data(self._base_api)
         table_name = table.db_name(self.prefer_ids)
@@ -213,8 +217,7 @@ class AirtableBaseToSqlite:
             }
             for field in table.fields:
                 if field.type == "multipleRecordLinks":
-                    new_table_name = table_name + "_" + field.id
-                    link_db_table = self._db.table(new_table_name)
+                    link_db_table = self.get_link_table(field, table)
                     if isinstance(link_db_table, sqlite_utils.db.Table):
                         link_db_table.insert_all(
                             {
@@ -223,9 +226,13 @@ class AirtableBaseToSqlite:
                             }
                             for value in record["fields"].get(field.name, [])
                         )
+                    else:  # pragma: no cover
+                        pass
                 else:
                     record_to_save[field.db_name(self.prefer_ids)] = record["fields"].get(field.name)
             records_to_save.append(record_to_save)
 
         if isinstance(db_table, sqlite_utils.db.Table):
             db_table.insert_all(records_to_save)
+        else:  # pragma: no cover
+            pass

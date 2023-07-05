@@ -42,3 +42,4 @@ def airtable_to_sqlite(personal_access_token: AirtablePersonalAccessToken, prefe
         database = output.format(base_name)
         db = Database(database, recreate=True)
         AirtableBaseToSqlite(personal_access_token, db, base, prefer_ids).run()
+        db.close()
