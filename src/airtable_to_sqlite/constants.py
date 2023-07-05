@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, NewType, Tuple
+from typing import Dict, NewType, Set, Tuple
 
 OPTION_FIELDS = {
     "linkedTableId": str,
@@ -82,7 +82,7 @@ META_TABLES: Dict[str, Tuple[Dict, Dict]] = {
 
 AirtablePersonalAccessToken = NewType("AirtablePersonalAccessToken", str)
 
-ForeignKeySet = set[Tuple[str, Tuple[str, str, str]]]
+ForeignKeySet = Set[Tuple[str, Tuple[str, str, str]]]
 
 
 class PreferedNamingMethod(Enum):
