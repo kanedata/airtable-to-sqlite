@@ -61,6 +61,11 @@ cov = [
   "test-cov",
   "cov-report",
 ]
+cov-fail = [
+  "test-cov",
+  "- coverage combine",
+  "coverage report --fail-under=100",
+]
 cov-html = [
   "test-cov",
   "- coverage combine",
