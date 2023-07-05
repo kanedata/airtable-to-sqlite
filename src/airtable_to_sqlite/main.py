@@ -1,7 +1,6 @@
 import logging
-from collections.abc import Generator
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, Generator, List, Optional
 
 import pyairtable.metadata
 import sqlite_utils
