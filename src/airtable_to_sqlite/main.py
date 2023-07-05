@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Generator
 from datetime import datetime
-from typing import Optional
+from typing import Dict, List, Optional
 
 import pyairtable.metadata
 import sqlite_utils
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_base_records(
-    personal_access_token: AirtablePersonalAccessToken, base_ids: Optional[list[str]] = None
+    personal_access_token: AirtablePersonalAccessToken, base_ids: Optional[List[str]] = None
 ) -> Generator[BaseRecord, None, None]:
     logger.info("Fetching base record from Airtable...")
     api = AirtableApi(personal_access_token)
@@ -54,9 +54,9 @@ class AirtableBaseToSqlite:
         self._base_api = AirtableBase(personal_access_token, base.id)
         self.prefer_ids = prefer_ids
         self.foreign_keys: ForeignKeySet = set()
-        self.table_meta: list[TableSchema] = []
-        self.table_id_lookup: dict[str, str] = {}
-        self.meta_tables: dict[str, sqlite_utils.db.Table] = {}
+        self.table_meta: List[TableSchema] = []
+        self.table_id_lookup: Dict[str, str] = {}
+        self.meta_tables: Dict[str, sqlite_utils.db.Table] = {}
 
     def run(self) -> None:
         self.get_schema()

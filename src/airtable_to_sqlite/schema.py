@@ -1,7 +1,7 @@
 import logging
 from copy import copy
 from dataclasses import dataclass
-from typing import Any, Generator, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from pyairtable.api.base import Base as AirtableBase
 
@@ -26,7 +26,7 @@ class FieldSchema:
     id: str  # noqa: A003
     name: str
     type: str  # noqa: A003
-    options: Optional[dict[str, Any]] = None
+    options: Optional[Dict[str, Any]] = None
 
     def db_name(self, prefers_ids: PreferedNamingMethod = PreferedNamingMethod.NAME) -> str:
         if prefers_ids == PreferedNamingMethod.ID:
@@ -49,7 +49,7 @@ class FieldSchema:
         return str
 
     @property
-    def choices(self) -> Optional[list[dict[str, Any]]]:
+    def choices(self) -> Optional[List[Dict[str, Any]]]:
         options = self.options
         if options is None:
             return None
@@ -64,9 +64,9 @@ class FieldSchema:
             for choice in options.get("choices", [])
         ]
 
-    def for_insertion(self, table: "TableSchema") -> dict[str, Any]:
+    def for_insertion(self, table: "TableSchema") -> Dict[str, Any]:
         options = copy(self.options)
-        field_to_insert: dict[str, Any] = {
+        field_to_insert: Dict[str, Any] = {
             "id": self.id,
             "name": self.name,
             "type": self.type,
@@ -99,15 +99,15 @@ class TableSchema:
     id: str  # noqa: A003
     name: str
     primaryFieldId: str  # noqa: N815
-    fields: list[FieldSchema]
-    views: list[ViewSchema]
+    fields: List[FieldSchema]
+    views: List[ViewSchema]
 
     def db_name(self, prefers_ids: PreferedNamingMethod = PreferedNamingMethod.NAME) -> str:
         if prefers_ids == PreferedNamingMethod.ID:
             return self.id
         return self.name
 
-    def get_table_data(self, api: AirtableBase) -> Generator[dict[str, Any], None, None]:
+    def get_table_data(self, api: AirtableBase) -> Generator[Dict[str, Any], None, None]:
         logger.info(f"Fetching table data for {self.name} from Airtable...")
         for page in api.iterate(self.name):
             for record in page:
