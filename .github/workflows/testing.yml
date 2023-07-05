@@ -24,3 +24,5 @@ jobs:
         pip install hatch
     - name: Run tests
       run: hatch run test-cov
+    - name: Check coverage
+      run: hatch run coverage report --fail-under=100
