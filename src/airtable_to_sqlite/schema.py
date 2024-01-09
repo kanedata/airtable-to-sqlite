@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Generator, List, Optional
 
 from pyairtable.api.base import Base as AirtableBase
+from pyairtable.api.table import Table as AirtableTable
 
 from airtable_to_sqlite.constants import (
     NUMBER_FIELD_TYPES,
@@ -107,8 +108,9 @@ class TableSchema:
             return self.id
         return self.name
 
-    def get_table_data(self, api: AirtableBase) -> Generator[Dict[str, Any], None, None]:
+    def get_table_data(self, base: AirtableBase) -> Generator[Dict[str, Any], None, None]:
         logger.info(f"Fetching table data for {self.name} from Airtable...")
-        for page in api.iterate(self.name):
+        table: AirtableTable = base.table(self.name)
+        for page in table.iterate():
             for record in page:
-                yield record
+                yield dict(record)

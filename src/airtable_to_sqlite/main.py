@@ -5,7 +5,6 @@ from typing import Dict, Generator, List, Optional
 import pyairtable.metadata
 import sqlite_utils
 from pyairtable.api.api import Api as AirtableApi
-from pyairtable.api.base import Base as AirtableBase
 from sqlite_utils import Database
 from tqdm import tqdm
 
@@ -50,7 +49,8 @@ class AirtableBaseToSqlite:
     ) -> None:
         self._base: BaseRecord = base
         self._db: Database = db
-        self._base_api = AirtableBase(personal_access_token, base.id)
+        self._api = AirtableApi(personal_access_token)
+        self._base_api = self._api.base(base.id)
         self.prefer_ids = prefer_ids
         self.foreign_keys: ForeignKeySet = set()
         self.table_meta: List[TableSchema] = []

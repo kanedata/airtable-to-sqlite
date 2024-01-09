@@ -144,10 +144,10 @@ def test_viewschema_dbname():
     assert f.db_name() == "View"
 
 
-def test_tableschema_get_table_data(_mock_api):
+def test_tableschema_get_table_data(_mock_base):
     t = TableSchema(id="tbl123", name="Table", fields=[], views=[], primaryFieldId="fld123")
 
-    table_data = list(t.get_table_data(_mock_api))
+    table_data = list(t.get_table_data(_mock_base))
     assert len(table_data) == 4
     assert table_data[0] == {
         "id": "rec123",
